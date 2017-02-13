@@ -37,7 +37,8 @@ public class ExtJsTargetAdapter implements TranslationTarget {
   @Override
   public void generateStream(Map<String, Node> root, OutputStream out) {
 
-    System.out.println("Complete js String is -- " + this.prefix.append(createJsString(root)).append(this.postfix));
+    System.out
+        .println("Complete js String is -- " + this.prefix.append(createJsString(root, true)).append(this.postfix));
   }
 
   /**
@@ -52,7 +53,9 @@ public class ExtJsTargetAdapter implements TranslationTarget {
       }
       FileWriter fw = new FileWriter(out.getAbsoluteFile());
       BufferedWriter bw = new BufferedWriter(fw);
-      bw.write(this.prefix.append(createJsString(root)).append(this.postfix).toString());
+
+      bw.write(this.prefix.append(createJsString(root, true)).append(this.postfix).toString());
+
       bw.close();
     } catch (IOException e) {
       System.out.println("ERROR:: " + e.getMessage());
@@ -64,20 +67,25 @@ public class ExtJsTargetAdapter implements TranslationTarget {
   /**
    * This methods create extjs output string.
    *
-   * @param root
-   * @return
+   * @param root This contains content of input properties files in form of Map.
+   * @param flag specifies if its called recursively or not.
+   * @return string which is in format of JS.
    */
-  public StringBuilder createJsString(Map<String, Node> root) {
+  public StringBuilder createJsString(Map<String, Node> root, boolean flag) {
 
     String key, childKey;
     Node node, childNode;
     Map<String, Node> childMap;
+
     Iterator<Map.Entry<String, Node>> itr = root.entrySet().iterator();
+
     while (itr.hasNext()) {
+
       Entry<String, Node> entry = itr.next();
       key = entry.getKey();
       node = entry.getValue();
       childMap = node.getChildren();
+
       if (!childMap.isEmpty()) {
         this.startJsStringBuilder.append(key + ": {").append(Constant.NEW_LINE_CHAR);
         Iterator<Map.Entry<String, Node>> childMapItr = childMap.entrySet().iterator();
@@ -88,36 +96,42 @@ public class ExtJsTargetAdapter implements TranslationTarget {
           if (childNode.getText() != null) {
             // leaf node
             this.startJsStringBuilder.append(childKey + " : " + "\'" + childNode.getText() + "\'");
-            // if (childMapItr.hasNext()) {
-            // this.startJsStringBuilder.append(",");
-            // } else {
-            // this.startJsStringBuilder.append("}");
-            // }
+
             childMapItr.remove();
+
           } else {
             this.startJsStringBuilder.append(childKey + ": {");
-            createJsString(childNode.getChildren());
 
+            createJsString(childNode.getChildren(), false);
           }
+
           if (childMapItr.hasNext()) {
             this.startJsStringBuilder.append(",");
+
           } else {
             this.startJsStringBuilder.append("}");
+
           }
 
         }
+
       } else {
         this.startJsStringBuilder.append(key + " : " + "\'" + node.getText() + "\'");
 
       }
-      if (itr.hasNext()) {
-        this.startJsStringBuilder.append(",");
-      } else {
-        this.startJsStringBuilder.append("}");
-      }
 
+      if (itr.hasNext()) {
+
+        this.startJsStringBuilder.append(",");
+
+      } else {
+        if (!flag)
+          this.startJsStringBuilder.append("}");
+
+      }
       itr.remove();
     }
+
     return this.startJsStringBuilder;
   }
 
